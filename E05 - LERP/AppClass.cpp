@@ -57,19 +57,30 @@ void Application::Display(void)
 	//calculate the current position
 	vector3 v3CurrentPos;
 	
+	matrix4 m4View = m_pCameraMngr->GetViewMatrix();
+	matrix4 m4Projection = m_pCameraMngr->GetProjectionMatrix();
 
+	float fTimeBetweenStops = 2.0f;
+	float fPercent = MapValue(fTimer, 0.0f, fTimeBetweenStops, 0.0f, 1.0f);
 
-
+	vector3 v3stopLast;
+	vector3 v3stopNext;
+	static uint route = 0;
+	v3stopLast = m_stopsList[route];
+	v3stopNext = m_stopsList[(route + 1) % m_stopsList.size()];
 
 	//your code goes here
-	v3CurrentPos = vector3(0.0f, 0.0f, 0.0f);
-	//-------------------
+	v3CurrentPos = glm::lerp(v3stopLast, v3stopNext, fPercent);
 	
-
-
-	
-	matrix4 m4Model = glm::translate(v3CurrentPos);
+	matrix4 m4Model = glm::translate(IDENTITY_M4, v3CurrentPos);
 	m_pModel->SetModelMatrix(m4Model);
+
+	if (fPercent >= 1.0f)
+	{
+		route++;
+		fTimer = m_pSystem->GetDeltaTime(uClock);
+		route %= m_stopsList.size();
+	}
 
 	m_pMeshMngr->Print("\nTimer: ");//Add a line on top
 	m_pMeshMngr->PrintLine(std::to_string(fTimer), C_YELLOW);

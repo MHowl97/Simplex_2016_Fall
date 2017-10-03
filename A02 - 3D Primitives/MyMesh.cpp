@@ -1,4 +1,5 @@
 #include "MyMesh.h"
+#include <math.h>
 void MyMesh::Init(void)
 {
 	m_bBinded = false;
@@ -276,7 +277,43 @@ void MyMesh::GenerateCone(float a_fRadius, float a_fHeight, int a_nSubdivisions,
 	Init();
 
 	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	vector3 origin(0.0f, 0.0f, 0.0f);
+	vector3 tip(0.0f, a_fHeight * 0.5f, 0.0f);
+	vector3 base(0.0f, -a_fHeight * 0.5f, 0.0f);
+
+	float degrees = PI * 2.0f / a_nSubdivisions;
+
+	std::vector<vector3> coordinates;
+
+	for (uint i = 0; i <= a_nSubdivisions; i++)
+	{
+		vector3 coord(0.0f, base.y, 0.0f);
+
+		coord.x = cos(i * degrees) * a_fRadius;
+		coord.z = sin(i * degrees) * a_fRadius;
+
+		coordinates.push_back(coord);
+	}
+
+	for (uint i = 0; i <= a_nSubdivisions; i++)
+	{
+		if (i + 1 == coordinates.size())
+		{
+			break;
+		}
+
+		AddTri(coordinates[i], coordinates[i + 1], tip);
+	}
+
+	for (uint i = 0; i <= a_nSubdivisions; i++)
+	{
+		if (i + 1 == coordinates.size())
+		{
+			break;
+		}
+
+		AddTri(coordinates[i], base, coordinates[i+1]);
+	}
 	// -------------------------------
 
 	// Adding information about color
@@ -300,7 +337,70 @@ void MyMesh::GenerateCylinder(float a_fRadius, float a_fHeight, int a_nSubdivisi
 	Init();
 
 	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	vector3 origin(0.0f, 0.0f, 0.0f);
+	vector3 top(0.0f, a_fHeight * 0.5f, 0.0f);
+	vector3 base(0.0f, -a_fHeight * 0.5f, 0.0f);
+
+	float degrees = PI * 2.0f / a_nSubdivisions;
+
+	std::vector<vector3> coordinates;
+	
+	//get coordinates on circle
+	for (uint i = 0; i <= a_nSubdivisions; i++)
+	{
+		vector3 coord(0.0f, 0.0f, 0.0f);
+
+		coord.x = cos(i * degrees) * a_fRadius;
+		coord.z = sin(i * degrees) * a_fRadius;
+
+		coordinates.push_back(coord);
+	}
+
+	//create quads for sides
+	for (uint i = 0; i <= a_nSubdivisions; i++)
+	{
+		if (i + 1 == coordinates.size())
+		{
+			break;
+		}
+
+		vector3 topLeft = coordinates[i];
+		topLeft.y = top.y;
+		vector3 topRight = coordinates[i + 1];
+		topRight.y = top.y;
+		vector3 bottomLeft = coordinates[i];
+		bottomLeft.y = base.y;
+		vector3 bottomRight = coordinates[i + 1];
+		bottomRight.y = base.y;
+
+		AddQuad(bottomRight, bottomLeft, topRight, topLeft);
+	}
+
+	//bottom
+	for (uint i = 0; i <= a_nSubdivisions; i++)
+	{
+		if (i + 1 == coordinates.size())
+		{
+			break;
+		}
+
+		coordinates[i].y = base.y;
+		coordinates[i + 1].y = base.y;
+		AddTri(coordinates[i], coordinates[i + 1], base);
+	}
+
+	//top
+	for (uint i = 0; i <= a_nSubdivisions; i++)
+	{
+		if (i + 1 == coordinates.size())
+		{
+			break;
+		}
+
+		coordinates[i].y = top.y;
+		coordinates[i + 1].y = top.y;
+		AddTri(coordinates[i], top, coordinates[i + 1]);
+	}
 	// -------------------------------
 
 	// Adding information about color
@@ -330,7 +430,103 @@ void MyMesh::GenerateTube(float a_fOuterRadius, float a_fInnerRadius, float a_fH
 	Init();
 
 	// Replace this with your code
-	GenerateCube(a_fOuterRadius * 2.0f, a_v3Color);
+	vector3 origin(0.0f, 0.0f, 0.0f);
+	vector3 top(0.0f, a_fHeight * 0.5f, 0.0f);
+	vector3 base(0.0f, -a_fHeight * 0.5f, 0.0f);
+
+	float degrees = PI * 2.0f / a_nSubdivisions;
+
+	std::vector<vector3> coordinatesInner;
+	std::vector<vector3> coordinatesOuter;
+
+	//get coordinates on inner circle
+	for (uint i = 0; i <= a_nSubdivisions; i++)
+	{
+		vector3 coord(0.0f, 0.0f, 0.0f);
+
+		coord.x = cos(i * degrees) * a_fInnerRadius;
+		coord.z = sin(i * degrees) * a_fInnerRadius;
+
+		coordinatesInner.push_back(coord);
+
+		coord.x = cos(i * degrees) * a_fOuterRadius;
+		coord.z = sin(i * degrees) * a_fOuterRadius;
+
+		coordinatesOuter.push_back(coord);
+	}
+
+	//create quads for outer sides
+	for (uint i = 0; i <= a_nSubdivisions; i++)
+	{
+		if (i + 1 == coordinatesOuter.size())
+		{
+			break;
+		}
+
+		vector3 topLeft = coordinatesOuter[i];
+		topLeft.y = top.y;
+		vector3 topRight = coordinatesOuter[i + 1];
+		topRight.y = top.y;
+		vector3 bottomLeft = coordinatesOuter[i];
+		bottomLeft.y = base.y;
+		vector3 bottomRight = coordinatesOuter[i + 1];
+		bottomRight.y = base.y;
+
+		AddQuad(bottomRight, bottomLeft, topRight, topLeft);
+	}
+
+	//create quads for inner sides
+	for (uint i = 0; i <= a_nSubdivisions; i++)
+	{
+		if (i + 1 == coordinatesInner.size())
+		{
+			break;
+		}
+
+		vector3 topLeft = coordinatesInner[i];
+		topLeft.y = top.y;
+		vector3 topRight = coordinatesInner[i + 1];
+		topRight.y = top.y;
+		vector3 bottomLeft = coordinatesInner[i];
+		bottomLeft.y = base.y;
+		vector3 bottomRight = coordinatesInner[i + 1];
+		bottomRight.y = base.y;
+
+		AddQuad(bottomLeft, bottomRight, topLeft, topRight);
+	}
+
+	
+	//bottom
+	for (uint i = 0; i <= a_nSubdivisions; i++)
+	{
+		if (i + 1 == coordinatesOuter.size())
+		{
+			break;
+		}
+
+		coordinatesOuter[i].y = base.y;
+		coordinatesOuter[i + 1].y = base.y;
+		coordinatesInner[i].y = base.y;
+		coordinatesInner[i + 1].y = base.y;
+		
+		AddQuad(coordinatesOuter[i], coordinatesOuter[i + 1], coordinatesInner[i], coordinatesInner[i + 1]);
+	}
+
+	//top
+	for (uint i = 0; i <= a_nSubdivisions; i++)
+	{
+		if (i + 1 == coordinatesOuter.size())
+		{
+			break;
+		}
+
+		coordinatesOuter[i].y = top.y;
+		coordinatesOuter[i + 1].y = top.y;
+		coordinatesInner[i].y = top.y;
+		coordinatesInner[i + 1].y = top.y;
+
+		AddQuad(coordinatesOuter[i + 1], coordinatesOuter[i], coordinatesInner[i + 1], coordinatesInner[i]);
+	}
 	// -------------------------------
 
 	// Adding information about color

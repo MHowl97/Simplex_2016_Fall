@@ -560,6 +560,9 @@ void MyMesh::GenerateTorus(float a_fOuterRadius, float a_fInnerRadius, int a_nSu
 	// Replace this with your code
 	vector3 origin(0.0f, 0.0f, 0.0f);
 
+	
+
+	 
 	std::vector<vector3> coordinatesV;
 	std::vector<vector3> coordinatesN;
 

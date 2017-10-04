@@ -583,10 +583,76 @@ void MyMesh::GenerateSphere(float a_fRadius, int a_nSubdivisions, vector3 a_v3Co
 	Init();
 
 	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	vector3 origin(0.0f, 0.0f, 0.0f);
+	vector3 tip(0.0f, a_fRadius, 0.0f);
+	vector3 base(0.0f, -a_fRadius, 0.0f);
+
+	float degrees = PI * 2.0f / 4;
+
+	std::vector<vector3> coordinates;
+
+	for (uint i = 0; i <= 4; i++)
+	{
+		vector3 coord(0.0f, 0.0f, 0.0f);
+
+		coord.x = cos(i * degrees) * a_fRadius;
+		coord.z = sin(i * degrees) * a_fRadius;
+
+		coordinates.push_back(coord);
+	}
+
+	for (uint i = 0; i <= 4; i++)
+	{
+		if (i + 1 == coordinates.size())
+		{
+			break;
+		}
+
+		subdivide(coordinates[i], tip, coordinates[i + 1], a_nSubdivisions);
+	}
+
+	for (uint i = 0; i <= 4; i++)
+	{
+		if (i + 1 == coordinates.size())
+		{
+			break;
+		}
+
+		subdivide(coordinates[i], coordinates[i + 1], base, a_nSubdivisions);
+	}
 	// -------------------------------
 
 	// Adding information about color
 	CompleteMesh(a_v3Color);
 	CompileOpenGL3X();
+}
+
+void MyMesh::subdivide(vector3 v1, vector3 v2, vector3 v3, int level)
+{
+	if (level == 0)
+	{
+		AddTri(v1, v2, v3);
+	}
+	else
+	{
+		//first edge
+		vector3 mid1(0.5f * (v1.x + v2.x), 0.5f * (v1.y + v2.y), 0.5f * (v1.z + v2.z));
+		float s = 1.0f / sqrt(mid1.x * mid1.x + mid1.y * mid1.y + mid1.z * mid1.z);
+		mid1 *= s;
+
+		//second edge
+		vector3 mid2(0.5f * (v1.x + v3.x), 0.5f * (v1.y + v3.y), 0.5f * (v1.z + v3.z));
+		s = 1.0f / sqrt(mid2.x * mid2.x + mid2.y * mid2.y + mid2.z * mid2.z);
+		mid2 *= s;
+
+		//third edge
+		vector3 mid3(0.5f * (v2.x + v3.x), 0.5f * (v2.y + v3.y), 0.5f * (v2.z + v3.z));
+		s = 1.0f / sqrt(mid3.x * mid3.x + mid3.y * mid3.y + mid3.z * mid3.z);
+		mid3 *= s;
+
+		subdivide(v1, mid1, mid2, level - 1);
+		subdivide(mid1, v2, mid3, level - 1);
+		subdivide(mid2, mid3, v3, level - 1);
+		subdivide(mid1, mid3, mid2, level - 1);
+	}
 }

@@ -558,7 +558,57 @@ void MyMesh::GenerateTorus(float a_fOuterRadius, float a_fInnerRadius, int a_nSu
 	Init();
 
 	// Replace this with your code
-	GenerateCube(a_fOuterRadius * 2.0f, a_v3Color);
+	vector3 origin(0.0f, 0.0f, 0.0f);
+
+	std::vector<vector3> coordinatesV;
+	std::vector<vector3> coordinatesN;
+
+	float dpsi = 2.0f * PI / a_nSubdivisionsA;
+	float dphi = 2.0f * PI / a_nSubdivisionsB;
+	float psi = 0.0f;
+
+	for (uint i = 0; i <= a_nSubdivisionsB; i++)
+	{
+		float cpsi = cos(psi);
+		float spsi = sin(psi);
+		float phi = 0.0f;
+
+		for (uint j = 0; j <= a_nSubdivisionsA; j++)
+		{
+			uint offset = 3 * (j * a_nSubdivisionsA + i);
+			float cphi = cos(phi);
+			float sphi = sin(phi);
+
+			vector3 coordV(0.0f, 0.0f, 0.0f);
+			vector3 coordN(0.0f, 0.0f, 0.0f);
+
+			coordV.x = cpsi * (a_fOuterRadius + cphi * a_fInnerRadius);
+			coordV.y = spsi * (a_fOuterRadius + cphi * a_fInnerRadius);
+			coordV.z = sphi * a_fInnerRadius;
+			coordN.x = cpsi * cphi;
+			coordN.y = spsi * cphi;
+			coordN.z = sphi;
+
+			coordinatesV.push_back(coordV);
+			coordinatesN.push_back(coordN);
+
+			phi += dphi;
+		}
+		psi += dpsi;
+	}
+
+	for (uint i = 0; i <= a_nSubdivisionsA; i++)
+	{
+		for (uint j = 0; i <= a_nSubdivisionsB; j++)
+		{
+			if (j + 1 == coordinatesN.size())
+			{
+				break;
+			}
+
+			AddQuad(coordinatesV[j], coordinatesV[j+1], coordinatesN[j], coordinatesN[j+1]);
+		}
+	}
 	// -------------------------------
 
 	// Adding information about color

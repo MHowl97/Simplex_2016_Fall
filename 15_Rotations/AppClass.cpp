@@ -40,6 +40,11 @@ void Application::Display(void)
 
 	matrix4 m4model = m4RotX * m4RotY * m4RotZ;
 	
+	static float fValue = 0.0f;
+	quaternion q1 = glm::angleAxis((fValue), AXIS_Z);
+	fValue += 1.0f;
+	m4model = ToMatrix4(q1);
+
 	//Get a timer
 	static uint uClock = m_pSystem->GenClock();
 	float fTimer = m_pSystem->GetTimeSinceStart(uClock);

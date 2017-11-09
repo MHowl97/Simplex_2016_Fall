@@ -33,7 +33,18 @@ void Application::Display(void)
 
 	matrix4 m4View = m_pCameraMngr->GetViewMatrix(); //view Matrix
 	matrix4 m4Projection = m_pCameraMngr->GetProjectionMatrix(); //Projection Matrix
+
+	matrix4 m4RotX = glm::rotate(IDENTITY_M4, m_v3rotation.x, vector3(1.0f, 0.0f, 0.0f));
+	matrix4 m4RotY = glm::rotate(IDENTITY_M4, m_v3rotation.y, vector3(0.0f, 1.0f, 0.0f));
+	matrix4 m4RotZ = glm::rotate(IDENTITY_M4, m_v3rotation.z, vector3(0.0f, 0.0f, 1.0f));
+
+	matrix4 m4model = m4RotX * m4RotY * m4RotZ;
 	
+	static float fValue = 0.0f;
+	quaternion q1 = glm::angleAxis((fValue), AXIS_Z);
+	fValue += 1.0f;
+	m4model = ToMatrix4(q1);
+
 	//Get a timer
 	static uint uClock = m_pSystem->GenClock();
 	float fTimer = m_pSystem->GetTimeSinceStart(uClock);

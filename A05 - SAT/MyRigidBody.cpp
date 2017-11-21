@@ -286,6 +286,151 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	Simplex that might help you [eSATResults] feel free to use it.
 	(eSATResults::SAT_NONE has a value of 0)
 	*/
+	//Calculate the 8 corners of the cube
+	vector3 a_v3Corner[8];
+	a_v3Corner[0] = m_v3MinL;
+	a_v3Corner[1] = vector3(m_v3MaxL.x, m_v3MinL.y, m_v3MinL.z);
+	a_v3Corner[2] = vector3(m_v3MinL.x, m_v3MaxL.y, m_v3MinL.z);
+	a_v3Corner[3] = vector3(m_v3MaxL.x, m_v3MaxL.y, m_v3MinL.z);
+	a_v3Corner[4] = vector3(m_v3MinL.x, m_v3MinL.y, m_v3MaxL.z);
+	a_v3Corner[5] = vector3(m_v3MaxL.x, m_v3MinL.y, m_v3MaxL.z);
+	a_v3Corner[6] = vector3(m_v3MinL.x, m_v3MaxL.y, m_v3MaxL.z);
+	a_v3Corner[7] = m_v3MaxL;
+
+	//Calculate the 8 corners of the other cube
+	vector3 b_MinL = a_pOther->GetMinLocal();
+	vector3 b_MaxL = a_pOther->GetMaxLocal();
+	vector3 b_v3Corner[8];
+	b_v3Corner[0] = b_MinL;
+	b_v3Corner[1] = vector3(b_MaxL.x, b_MinL.y, b_MinL.z);
+	b_v3Corner[2] = vector3(b_MinL.x, b_MaxL.y, b_MinL.z);
+	b_v3Corner[3] = vector3(b_MaxL.x, b_MaxL.y, b_MinL.z);
+	b_v3Corner[4] = vector3(b_MinL.x, b_MinL.y, b_MaxL.z);
+	b_v3Corner[5] = vector3(b_MaxL.x, b_MinL.y, b_MaxL.z);
+	b_v3Corner[6] = vector3(b_MinL.x, b_MaxL.y, b_MaxL.z);
+	b_v3Corner[7] = b_MaxL;
+	
+	/*for (int i = 0; i < 8; i++)
+	{
+		a_v3Corner[i] = vector3(m_m4ToWorld * vector4(a_v3Corner[i], 1.0f));
+		b_v3Corner[i] = vector3(a_pOther->GetModelMatrix() * vector4(b_v3Corner[i], 1.0f));
+	}*/
+
+	float ra, rb;
+	matrix3 R, AbsR;//rotation matrices
+
+	/*
+	vector3 shapeVectors[15];
+
+	shapeVectors[0] = a_v3Corner[1] - a_v3Corner[0];
+	shapeVectors[1] = a_v3Corner[2] - a_v3Corner[0];
+	shapeVectors[2] = a_v3Corner[4] - a_v3Corner[0];
+
+	shapeVectors[3] = b_v3Corner[1] - b_v3Corner[0];
+	shapeVectors[4] = b_v3Corner[2] - b_v3Corner[0];
+	shapeVectors[5] = b_v3Corner[4] - b_v3Corner[0];
+
+	shapeVectors[6] = glm::cross(shapeVectors[0], shapeVectors[3]);
+	shapeVectors[7] = glm::cross(shapeVectors[0], shapeVectors[4]);
+	shapeVectors[8] = glm::cross(shapeVectors[0], shapeVectors[5]);
+	shapeVectors[9] = glm::cross(shapeVectors[1], shapeVectors[3]);
+	shapeVectors[10] = glm::cross(shapeVectors[1], shapeVectors[4]);
+	shapeVectors[11] = glm::cross(shapeVectors[1], shapeVectors[5]);
+	shapeVectors[12] = glm::cross(shapeVectors[2], shapeVectors[3]);
+	shapeVectors[13] = glm::cross(shapeVectors[2], shapeVectors[4]);
+	shapeVectors[14] = glm::cross(shapeVectors[2], shapeVectors[5]);
+	*/
+
+	//get local axes
+	vector3 a_u[3] = { (a_v3Corner[1] - a_v3Corner[0]),(a_v3Corner[2] - a_v3Corner[0]),(a_v3Corner[4] - a_v3Corner[0]) };
+	vector3 b_u[3] = { (b_v3Corner[1] - b_v3Corner[0]),(b_v3Corner[2] - b_v3Corner[0]),(b_v3Corner[4] - b_v3Corner[0]) };
+	
+	//get local half-widths
+	float a_e[3] = { m_v3HalfWidth.x, m_v3HalfWidth.y, m_v3HalfWidth.z };
+	vector3 b_HalfWidth = a_pOther->GetHalfWidth();
+	float b_e[3] = { b_HalfWidth.x, b_HalfWidth.y, b_HalfWidth.z };
+
+	//rotation matrix with b in a's coordinate frame
+	for (int i = 0; i < 3; i++)
+		for (int j = 0; j < 3; j++)
+			R[i][j] = glm::dot(a_u[i], b_u[j]);
+
+	//translation vector
+	vector3 t = a_pOther->m_v3Center - m_v3Center;
+
+	//translation in a's coordinate frame
+	t = vector3(glm::dot(t, a_u[0]), glm::dot(t, a_u[1]), glm::dot(t, a_u[2]));
+
+	//absolute value + epsilon value to fix near-nulls
+	for (int i = 0; i < 3; i++)
+		for (int j = 0; j < 3; j++)
+			AbsR[i][j] = glm::abs(R[i][j] + DBL_EPSILON);
+
+	//test axes AX,AY,AZ
+	for (int i = 0; i < 3; i++)
+	{
+		ra = a_e[i];
+		rb = b_e[0] * AbsR[i][0] + b_e[1] * AbsR[i][1] + b_e[2] * AbsR[i][2];
+		if (glm::abs(t[i]) > ra + rb)
+			if (i == 0) return eSATResults::SAT_AX;
+			else if (i == 1) return eSATResults::SAT_AY;
+			else if (i == 2) return eSATResults::SAT_AZ;
+	}
+	//test axes BX,BY,BZ
+	for (int i = 0; i < 3; i++)
+	{
+		ra = a_e[0] * AbsR[i][0] + a_e[1] * AbsR[i][1] + a_e[2] * AbsR[i][2];
+		rb = b_e[i];
+		if (glm::abs(t[0] * R[0][i] + t[1] * R[1][i] + t[2] * R[2][i]) > ra + rb)
+			if (i == 0) return eSATResults::SAT_BX;
+			else if (i == 1) return eSATResults::SAT_BY;
+			else if (i == 2) return eSATResults::SAT_BZ;
+	}
+
+	//test axis AX x BX
+	ra = a_e[1] * AbsR[2][0] + a_e[2] * AbsR[1][0];
+	rb = b_e[1] * AbsR[0][2] + b_e[2] * AbsR[0][1];
+	if (glm::abs(t[2] * R[1][0] - t[1] * R[2][0]) > ra + rb) return eSATResults::SAT_AXxBX;
+
+	//test asix AX x BY
+	ra = a_e[1] * AbsR[2][1] + a_e[2] * AbsR[1][1];
+	rb = b_e[0] * AbsR[0][2] + b_e[2] * AbsR[0][0];
+	if (glm::abs(t[2] * R[1][1] - t[1] * R[2][1]) > ra + rb) return eSATResults::SAT_AXxBY;
+
+	//test axis AX x BZ
+	ra = a_e[1] * AbsR[2][2] + a_e[2] * AbsR[1][2];
+	rb = b_e[0] * AbsR[0][1] + b_e[1] * AbsR[0][0];
+	if (glm::abs(t[2] * R[1][2] - t[1] * R[2][2]) > ra + rb) return eSATResults::SAT_AXxBZ;
+
+	//test axis L = AY x BX
+	ra = a_e[0] * AbsR[2][0] + a_e[2] * AbsR[0][0];
+	rb = b_e[1] * AbsR[1][2] + b_e[2] * AbsR[1][1];
+	if (glm::abs(t[0] * R[2][0] - t[2] * R[0][0]) > ra + rb) return eSATResults::SAT_AYxBX;
+
+	//test axis L = AY x BY
+	ra = a_e[0] * AbsR[2][1] + a_e[2] * AbsR[0][1];
+	rb = b_e[0] * AbsR[1][2] + b_e[2] * AbsR[1][0];
+	if (glm::abs(t[0] * R[2][1] - t[2] * R[0][1]) > ra + rb) return eSATResults::SAT_AYxBY;
+
+	//test axis L = AY x BZ
+	ra = a_e[0] * AbsR[2][2] + a_e[2] * AbsR[0][2];
+	rb = b_e[0] * AbsR[1][1] + b_e[1] * AbsR[1][0];
+	if (glm::abs(t[0] * R[2][2] - t[2] * R[0][2]) > ra + rb) return eSATResults::SAT_AYxBZ;
+
+	//test axis L = A2 x B0
+	ra = a_e[0] * AbsR[1][0] + a_e[1] * AbsR[0][0];
+	rb = b_e[1] * AbsR[2][2] + b_e[2] * AbsR[2][1];
+	if (glm::abs(t[1] * R[0][0] - t[0] * R[1][0]) > ra + rb) return eSATResults::SAT_AZxBX;
+
+	//test axis L = A2 x B1
+	ra = a_e[0] * AbsR[1][1] + a_e[1] * AbsR[0][1];
+	rb = b_e[0] * AbsR[2][2] + b_e[2] * AbsR[2][0];
+	if (glm::abs(t[1] * R[0][1] - t[0] * R[1][1]) > ra + rb) return eSATResults::SAT_AZxBY;
+
+	//test axis L = A2 x B2
+	ra = a_e[0] * AbsR[1][2] + a_e[1] * AbsR[0][2];
+	rb = b_e[0] * AbsR[2][1] + b_e[1] * AbsR[2][0];
+	if (glm::abs(t[1] * R[0][2] - t[0] * R[1][2]) > ra + rb) return eSATResults::SAT_AZxBZ;
 
 	//there is no axis test that separates this two objects
 	return eSATResults::SAT_NONE;

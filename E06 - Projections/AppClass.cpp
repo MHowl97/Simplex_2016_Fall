@@ -1,4 +1,5 @@
 #include "AppClass.h"
+#include "MyCamera.h"
 using namespace Simplex;
 void Application::InitVariables(void)
 {

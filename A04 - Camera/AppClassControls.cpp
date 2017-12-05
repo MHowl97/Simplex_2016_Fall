@@ -1,4 +1,5 @@
 #include "AppClass.h"
+#include "MyCamera.h"
 using namespace Simplex;
 //Mouse
 void Application::ProcessMouseMovement(sf::Event a_event)
@@ -369,6 +370,12 @@ void Application::CameraRotation(float a_fSpeed)
 		fAngleX += fDeltaMouse * a_fSpeed;
 	}
 	//Change the Yaw and the Pitch of the camera
+
+	vector3 camLookAt = m_pCamera->GetTarget(); //get the target
+	camLookAt = glm::rotate(camLookAt, fAngleX, AXIS_X); //rotate in x
+	camLookAt = glm::rotate(camLookAt, -fAngleY, AXIS_Y); //rotate in y
+	m_pCamera->SetTarget(camLookAt); //set new target
+	m_pCamera->SetUp(vector3(0.0f, 1.0f, 0.0f)); //reset up vector
 	SetCursorPos(CenterX, CenterY);//Position the mouse in the center
 }
 //Keyboard
@@ -385,6 +392,39 @@ void Application::ProcessKeyboard(void)
 
 	if (fMultiplier)
 		fSpeed *= 5.0f;
+
+	vector3 camPos = m_pCamera->GetPosition(); //get current position
+	vector3 camLookAt = m_pCamera->GetTarget(); //get current target
+	vector3 camUp = m_pCamera->GetUp(); //get current up
+	vector3 forward = camLookAt - camPos; //get a forward vector
+
+	//if wasd are pressed
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) 
+	{
+		camPos += forward * fSpeed; // add forward to position
+		camLookAt += forward * fSpeed; //add forward to target
+		m_pCamera->SetPositionTargetAndUp(camPos, camLookAt, camUp - camPos); //set values
+	}
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+	{
+		camPos -= forward * fSpeed; //subract forward from position
+		camLookAt -= forward * fSpeed; //subtract forward from target
+		m_pCamera->SetPositionTargetAndUp(camPos, camLookAt, camUp - camPos); //set values
+	}
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+	{
+		vector3 left = glm::cross(camUp, forward); //get left vector
+		camPos += left * fSpeed; //update position
+		camLookAt += left * fSpeed; //update target
+		m_pCamera->SetPositionTargetAndUp(camPos, camLookAt, camUp - camPos); //set new values
+	}
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+	{
+		vector3 right = glm::cross(forward, camUp); //get right vector
+		camPos += right * fSpeed; //update position
+		camLookAt += right * fSpeed; //update target
+		m_pCamera->SetPositionTargetAndUp(camPos, camLookAt, camUp - camPos); //set new values
+	}
 #pragma endregion
 }
 //Joystick

@@ -14,6 +14,7 @@ namespace Simplex
 class MyOctant
 {
 	static uint m_uOctantCount; //will store the number of octants instantiated
+	static uint m_uLeafCount; //will store the number of octants instantiated
 	static uint m_uMaxLevel;//will store the maximum level an octant can go to
 	static uint m_uIdealEntityCount; //will tell how many ideal Entities this object will contain
 
@@ -26,6 +27,7 @@ class MyOctant
 	MeshManager* m_pMeshMngr = nullptr;//Mesh Manager singleton
 	MyEntityManager* m_pEntityMngr = nullptr; //Entity Manager Singleton
 
+	vector3 m_v3Size = vector3(0.0f); //size of the octant
 	vector3 m_v3Center = vector3(0.0f); //Will store the center point of the octant
 	vector3 m_v3Min = vector3(0.0f); //Will store the minimum vector of the octant
 	vector3 m_v3Max = vector3(0.0f); //Will store the maximum vector of the octant
@@ -33,10 +35,11 @@ class MyOctant
 	MyOctant* m_pParent = nullptr;// Will store the parent of current octant
 	MyOctant* m_pChild[8];//Will store the children of the current octant
 
-	std::vector<uint> m_EntityList; //List of Entities under this octant (Index in Entity Manager)
+	std::vector<uint> m_lEntityList; //List of Entities under this octant (Index in Entity Manager)
+	uint m_uCurrEntityCount = 0;
 
 	MyOctant* m_pRoot = nullptr;//Root octant
-	std::vector<MyOctant*> m_lChild; //list of nodes that contain objects (this will be applied to root only)
+	std::vector<MyOctant*> m_lChildren; //list of nodes that contain objects (this will be applied to root only)
 	
 public:
 	/*
@@ -48,6 +51,7 @@ public:
 	OUTPUT: class object
 	*/
 	MyOctant(uint a_nMaxLevel = 2, uint a_nIdealEntityCount = 5);
+	MyOctant(vector3 a_v3Center, vector3 a_v3Size);
 	/*
 	USAGE: Constructor
 	ARGUMENTS:
@@ -86,7 +90,7 @@ public:
 	ARGUMENTS: ---
 	OUTPUT: size of octant
 	*/
-	float GetSize(void);
+	vector3 GetSize(void);
 	/*
 	USAGE: Gets the center of the octant in global scape
 	ARGUMENTS: ---
@@ -127,14 +131,14 @@ public:
 	- vector3 a_v3Color = REYELLOW -> Color of the volume to display.
 	OUTPUT: ---
 	*/
-	void Display(vector3 a_v3Color = C_YELLOW);
+	void DisplayCurrent(vector3 a_v3Color = C_YELLOW);
 	/*
 	USAGE: Displays the non empty leafs in the octree
 	ARGUMENTS:
 	- vector3 a_v3Color = REYELLOW -> Color of the volume to display.
 	OUTPUT: ---
 	*/
-	void DisplayLeafs(vector3 a_v3Color = C_YELLOW);
+	void DisplayAll(vector3 a_v3Color = C_YELLOW);
 	/*
 	USAGE: Clears the Entity list for each node
 	ARGUMENTS: ---
@@ -198,6 +202,7 @@ public:
 	OUTPUT: ---
 	*/
 	uint GetOctantCount(void);
+	void ConfigureDimensions(void);
 
 private:
 	/*
@@ -218,6 +223,7 @@ private:
 	OUTPUT: ---
 	*/
 	void ConstructList(void);
+	uint GetLeafCount(void);
 };//class
 
 } //namespace Simplex
